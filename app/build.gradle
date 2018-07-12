@@ -2,6 +2,12 @@ if(rootProject.ext.isDebugType){
     apply plugin: 'com.android.application'
 }else{
     apply plugin: 'com.android.library'
+    apply from: "update-jcenter.gradle"
+    apply from: "aar-build.gradle"
+}
+
+def getVersionCode(String version){
+    return Integer.parseInt(version.replace('.',''))
 }
 
 android {
@@ -33,6 +39,9 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
+    lintOptions {
+        abortOnError false
+    }
 }
 
 dependencies {
@@ -50,31 +59,4 @@ dependencies {
     compile 'com.android.support:design:26.1.0' //design
     compile 'org.jetbrains:annotations-java5:15.0'
     compile 'com.google.code.gson:gson:2.8.1'   //Gson
-}
-
-//编译打包AAR库包
-task build_GeneralTools_AAR(dependsOn: ['clean','assembleRelease'], type: Copy){
-    preBuild.mustRunAfter 'clean'
-    File buildFile = new File(project.buildDir, "outputs/aar/app-release.aar")
-    File outDir = new File(project.rootDir, "app/output")
-
-    from buildFile
-    into outDir
-
-    doFirst{
-        if(outDir.exists()){
-            outDir.deleteDir()
-        }
-    }
-
-    doLast {
-        File srcFile = new File(outDir, "app-release.aar")
-        File desFile = new File(outDir,"${project.group}-${android.defaultConfig.versionName}.aar")
-        boolean result =srcFile.renameTo(desFile)
-        println("rename result " + result)
-    }
-}
-
-def static getVersionCode(String version){
-    return Integer.parseInt(version.replace('.',''))
 }

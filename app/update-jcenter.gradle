@@ -1,0 +1,9 @@
+apply plugin: 'com.novoda.bintray-release'
+
+publish{
+    userOrg = 'houxj2018'    //注册时候的用户名
+    groupId = 'com.houxj.generaltools'    //compile引用时的第1部分(包名)
+    artifactId = 'generaltools' //发布到JCenter上的项目名字，compile引用时的第2部分 项目名
+    publishVersion = '1.0.1' //版本号 ，compile引用时的最后部分，下次更新是只需要更改版本号即可
+    desc = '工具类'   //描述，不重要
+}
