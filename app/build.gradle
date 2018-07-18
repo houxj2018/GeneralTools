@@ -45,7 +45,7 @@ android {
 }
 
 dependencies {
-    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
     implementation 'com.android.support:appcompat-v7:26.1.0'
     implementation 'com.android.support.constraint:constraint-layout:1.1.2'
     testImplementation 'junit:junit:4.12'
@@ -54,9 +54,11 @@ dependencies {
     configurations.all {
         resolutionStrategy.force 'com.android.support:support-annotations:26.1.0'
     }
-    api 'com.nostra13.universalimageloader:universal-image-loader:1.9.5'//ImageLoader
-
-    compile 'com.android.support:design:26.1.0' //design
-    compile 'org.jetbrains:annotations-java5:15.0'
-    compile 'com.google.code.gson:gson:2.8.1'   //Gson
+    //为了能打包成aar以后不需要引用包的地址。这里都把外部包的jar包或者aar包下载了放在工程里
+    //pinyin4j implementation 'com.belerweb:pinyin4j:2.5.0'
+    implementation files('libs/pinyin4j-2.5.0.jar')
+    //Gson implementation 'com.google.code.gson:gson:2.8.1'
+    implementation files('libs/gson-2.8.1.jar')
+    //ImageLoader implementation 'com.nostra13.universalimageloader:universal-image-loader:1.9.5'
+    implementation files('libs/universal-image-loader-1.9.5.jar')
 }

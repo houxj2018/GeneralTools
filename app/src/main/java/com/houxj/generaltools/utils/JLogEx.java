@@ -3,6 +3,8 @@ package com.houxj.generaltools.utils;
 import android.util.Log;
 
 import java.lang.reflect.Field;
+import java.util.Arrays;
+import java.util.Date;
 import java.util.Locale;
 
 /**
@@ -43,70 +45,61 @@ public class JLogEx {
     }
     //TODO 打印数组
     public static <T> void  d(T[] array){
-        StringBuilder builder = new StringBuilder();
-        if(null != array){
-            builder.append("[");
-            for (T t: array){
-                builder.append(objString(t));
-                builder.append(",");
-            }
-            builder.append("]");
-        }
-        d_log(getLogInfo() + " : " + builder.toString());
+        d_log(getLogInfo() + " : " + objString(array));
     }
     public static <T> void  d(T[] array, int from, int len){
-        StringBuilder builder = new StringBuilder();
+        String info = "";
+        if(null != array && from < array.length){
+            int end = from + len;
+            if(end > array.length){
+                end = array.length;
+            }
+            info = objString(Arrays.copyOfRange(array,from, end));
+        }
+        d_log(getLogInfo() + " : " + info);
+    }
+    public static void d(String format,byte[] array){
+        d_log(getLogInfo() + " : " + bytesToString(format,array));
+    }
+    public static void d(String format,byte[] array, int from, int len){
+        String info = "";
         if(null != array && from< array.length){
             int end = from + len;
             if(end > array.length){
                 end = array.length;
             }
-            builder.append("[");
-            for (int i = from; i< end; i++){
-                builder.append(objString(array[i]));
-                builder.append(",");
-            }
-            builder.append("]");
+            bytesToString(format,Arrays.copyOfRange(array,from,end));
         }
-        d_log(getLogInfo() + " : " + builder.toString());
+        d_log(getLogInfo() + " : " + info);
     }
-    public static void d(String format,byte[] array){
+
+    //TODO byte 数组转显示字符串
+    public static String bytesToString(String format, byte[] bytes){
         StringBuilder builder = new StringBuilder();
-        if(null != array){
+        if(null != bytes){
             builder.append("[");
-            for(byte val:array){
+            for(byte val:bytes){
                 builder.append(String.format(format,val));
                 builder.append(",");
             }
+            builder.deleteCharAt(builder.length() -1);
             builder.append("]");
         }
-        d_log(getLogInfo() + " : " + builder.toString());
+        return builder.toString();
     }
-    public static void d(String format,byte[] array, int from, int len){
-        StringBuilder builder = new StringBuilder();
-        if(null != array && from< array.length){
-            int end = from + len;
-            if(end > array.length){
-                end = array.length;
-            }
-            builder.append("[");
-            for (int i = from; i< end; i++){
-                builder.append(String.format(format,array[i]));
-                builder.append(",");
-            }
-            builder.append("]");
-        }
-        d_log(getLogInfo() + " : " + builder.toString());
-    }
+
+    //TODO 实现对象信息打印功能
     public static <T> void d(T obj){
         d_log(getLogInfo() + " : " + objString(obj));
     }
 
     //TODO 实现Object的toString功能
-    private static <T> String objString(T obj){
+    public static <T> String objString(T obj){
         StringBuilder builder = new StringBuilder();
         try {
-            if(obj instanceof String || isWrapClass(obj.getClass())){
+            if(obj instanceof String
+                    || obj instanceof Date
+                    || isWrapClass(obj.getClass())){
                 builder.append(obj);
             }else{
                 builder.append("{");
@@ -119,6 +112,9 @@ public class JLogEx {
                         builder.append(String.format("%s=%s,", name, fie.get(obj)));
                     }
                 }
+                if(builder.charAt(builder.length()-1) ==','){//去掉最后的逗号
+                    builder.deleteCharAt(builder.length()-1);
+                }
                 builder.append("}");
             }
         } catch (IllegalAccessException e) {
@@ -126,6 +122,20 @@ public class JLogEx {
         }
         return builder.toString();
     }
+    public static <T> String objString(T[] objArray){
+        StringBuilder builder = new StringBuilder();
+        if(null != objArray){
+            builder.append("[");
+            for(T val:objArray){
+                builder.append(objString(val));
+                builder.append(",");
+            }
+            builder.deleteCharAt(builder.length() -1);
+            builder.append("]");
+        }
+        return builder.toString();
+    }
+
     //TODO 检查是否是基础数据类型
     private static boolean isWrapClass(Class clz) {
         try {
