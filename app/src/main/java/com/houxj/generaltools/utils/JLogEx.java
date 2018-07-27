@@ -16,6 +16,7 @@ public class JLogEx {
     private final static int METHOD_INDEX = 5;
     private static boolean mDebugEnable = false;//是否输出Debug日志功能
     private static boolean mInfoEnable = false;//是否输出Info日志功能
+    private static int mCallDepth = 0;  //打印调用深度
     private static String TAG = "JLogEx";
 
     //TODO 是否开启Debug打印
@@ -29,6 +30,16 @@ public class JLogEx {
     //TODO 设置TAG
     public static void setTAG(String tag){
         TAG = tag;
+    }
+    //TODO 设置打印的调用深度(最大3层默认0层即只打印调用函数不打印上级位置)
+    public static void setDepth(int max){
+        if(max <= 0){
+            mCallDepth = 0;
+        }else if(max>= 3){
+            mCallDepth = 3;
+        }else {
+            mCallDepth = max;
+        }
     }
 
     //TODO DEBUG打印函数信息和格式化日志
@@ -97,25 +108,29 @@ public class JLogEx {
     public static <T> String objString(T obj){
         StringBuilder builder = new StringBuilder();
         try {
-            if(obj instanceof String
-                    || obj instanceof Date
-                    || isWrapClass(obj.getClass())){
-                builder.append(obj);
-            }else{
-                builder.append("{");
-                Field[] fields = obj.getClass().getDeclaredFields();
-                for(Field fie : fields){
-                    final String name = fie.getName();
-                    if(!name.contains("this$") && !name.contains("$change")
-                            && !name.contains("serialVersionUID")) {
-                        fie.setAccessible(true);//这个是的到私有成员的权限的
-                        builder.append(String.format("%s=%s,", name, fie.get(obj)));
+            if(null != obj) {
+                if (obj instanceof String
+                        || obj instanceof Date
+                        || isWrapClass(obj.getClass())) {
+                    builder.append(obj);
+                } else {
+                    builder.append("{");
+                    Field[] fields = obj.getClass().getDeclaredFields();
+                    for (Field fie : fields) {
+                        final String name = fie.getName();
+                        if (!name.contains("this$") && !name.contains("$change")
+                                && !name.contains("serialVersionUID")) {
+                            fie.setAccessible(true);//这个是的到私有成员的权限的
+                            builder.append(String.format("%s=%s,", name, fie.get(obj)));
+                        }
                     }
+                    if (builder.charAt(builder.length() - 1) == ',') {//去掉最后的逗号
+                        builder.deleteCharAt(builder.length() - 1);
+                    }
+                    builder.append("}");
                 }
-                if(builder.charAt(builder.length()-1) ==','){//去掉最后的逗号
-                    builder.deleteCharAt(builder.length()-1);
-                }
-                builder.append("}");
+            }else {
+                builder.append("null");
             }
         } catch (IllegalAccessException e) {
             w(e.getMessage());
@@ -206,14 +221,19 @@ public class JLogEx {
     //获取日志调用函数信息
     private static String getLogInfo(){
         StringBuilder builder = new StringBuilder();
-        StackTraceElement myMethodCall = getMethodInfo(METHOD_INDEX + 1);
-        if(null != myMethodCall){//调用者
-            builder.append(getSimpleName(myMethodCall.getClassName()))
-                    .append(".")
-                    .append(myMethodCall.getMethodName())
-                    .append("(")
-                    .append(myMethodCall.getLineNumber())
-                    .append(") -> ");
+        if(mCallDepth > 0) {
+            StackTraceElement myMethodCall = null;
+            for (int i = METHOD_INDEX + mCallDepth; i> METHOD_INDEX; i--){
+                myMethodCall = getMethodInfo(i);
+                if (null != myMethodCall) {//调用者
+                    builder.append(getSimpleName(myMethodCall.getClassName()))
+                            .append(".")
+                            .append(myMethodCall.getMethodName())
+                            .append("[")
+                            .append(myMethodCall.getLineNumber())
+                            .append("] -> ");
+                }
+            }
         }
         StackTraceElement myMethod = getMethodInfo(METHOD_INDEX);
         if(null != myMethod){
@@ -221,6 +241,8 @@ public class JLogEx {
                     .append(".")
                     .append(myMethod.getMethodName())
                     .append("(")
+                    .append(myMethod.getFileName())
+                    .append(":")
                     .append(myMethod.getLineNumber())
                     .append(")");
         }

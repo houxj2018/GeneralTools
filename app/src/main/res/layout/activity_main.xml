@@ -4,11 +4,76 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
+    <EditText
+        android:id="@+id/edit_input"
+        android:background="#c7c1c1"
+        android:padding="2dp"
+        android:layout_width="match_parent"
+        android:layout_height="35dp" />
     <ImageView
         android:id="@+id/image_test"
         android:layout_gravity="center_horizontal"
-        android:layout_width="80dp"
-        android:layout_height="80dp" />
+        android:layout_width="60dp"
+        android:layout_height="60dp" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <Button
+            android:text="播放音频"
+            android:id="@+id/but_play"
+            android:onClick="onClick"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+
+        <Button
+            android:text="停止播放"
+            android:id="@+id/but_stop"
+            android:onClick="onClick"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+
+        <Button
+            android:text="开始录音"
+            android:id="@+id/but_start_record"
+            android:onClick="onClick"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+
+        <Button
+            android:text="停止录音"
+            android:id="@+id/but_stop_record"
+            android:onClick="onClick"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+        <Button
+            android:text="重启应用"
+            android:id="@+id/but_rebootapp"
+            android:onClick="onClick"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+
+        <Button
+            android:text="检测应用"
+            android:id="@+id/but_checkapp"
+            android:onClick="onClick"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+        <Button
+            android:text="软键盘"
+            android:id="@+id/but_softkeyb"
+            android:onClick="onClick"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+
+    </LinearLayout>
 
     <LinearLayout
         android:orientation="horizontal"
@@ -76,13 +141,35 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
         <Button
-            android:text="文件相关测试"
+            android:text="文件测试"
             android:id="@+id/but_file"
             android:onClick="onClick"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content" />
 
+        <Button
+            android:text="字符串测试"
+            android:id="@+id/but_string"
+            android:onClick="onClick"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+
+        <Button
+            android:text="网络测试"
+            android:id="@+id/but_network"
+            android:onClick="onClick"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+
+        <Button
+            android:text="手机测试"
+            android:id="@+id/but_phone"
+            android:onClick="onClick"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+
     </LinearLayout>
+
     <TextView
         android:id="@+id/text_view_info"
         android:layout_weight="1"

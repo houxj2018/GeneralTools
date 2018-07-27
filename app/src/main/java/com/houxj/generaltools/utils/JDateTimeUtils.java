@@ -135,4 +135,33 @@ public final class JDateTimeUtils {
         cal.add(Calendar.DATE, 6);
         return cal.getTime();
     }
+
+    //TODO 将秒数转换成文字描述
+    public static String secondsToString(int timeSec) {
+        if (timeSec <= 0)
+            return "00:00:00";
+        long hour = timeSec / 3600;
+        timeSec = timeSec % 3600;
+        long min = timeSec / 60;
+        timeSec = timeSec % 60;
+        String result = "";
+        if (hour < 10) {
+            result = "0" + hour + ":";
+        } else {
+            result = String.valueOf(hour) + ":";
+        }
+
+        if (min < 10) {
+            result += "0" + min + ":";
+        } else {
+            result += min + ":";
+        }
+
+        if (timeSec < 10) {
+            result += "0" + timeSec;
+        } else {
+            result += String.valueOf(timeSec);
+        }
+        return result;
+    }
 }

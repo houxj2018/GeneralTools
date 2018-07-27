@@ -13,10 +13,13 @@ import android.os.Environment;
 import android.provider.MediaStore;
 import android.support.v4.content.FileProvider;
 
+import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.IOException;
 import java.text.DecimalFormat;
 import java.util.zip.CheckedOutputStream;
@@ -54,7 +57,7 @@ public class JFileUtils {
     }
 
     //TODO 获取临时目录地址
-    public static String getTempPath(Context context){
+    public static String getCachePath(Context context){
         if(null != context) {
             if (Environment.MEDIA_MOUNTED.equals(Environment.getExternalStorageState())) {//使用外部缓存
                 File extCache = context.getExternalCacheDir();
@@ -158,6 +161,17 @@ public class JFileUtils {
             }
         }
         return strRet;
+    }
+    //谷歌相册地址的处理(未验证，待测试)
+    private static String handerGooglePhotosUri(Uri uri){
+        if(isGooglePhotosUri(uri)){
+            return uri.getLastPathSegment();
+        }
+        return null;
+    }
+    //判断是否谷歌相册的uri
+    private static boolean isGooglePhotosUri(Uri uri) {
+        return "com.google.android.apps.photos.content".equals(uri.getAuthority());
     }
 
     //TODO 文件地址转 Uri
@@ -284,5 +298,35 @@ public class JFileUtils {
             }
         }
         return size;
+    }
+
+    //TODO 读取文件到字符串
+    public static String loadFileAsString(String path){
+        StringBuilder text = new StringBuilder();
+        BufferedReader reader = null;
+        try {
+            reader = new BufferedReader(new FileReader(path));
+            char[] buf = new char[1024];
+            int numRead = 0;
+            while ((numRead = reader.read(buf)) != -1) {
+                String readText = String.valueOf(buf, 0, numRead);
+                text.append(readText);
+            }
+        } catch (FileNotFoundException e) {
+//            e.printStackTrace();
+            JLogEx.w(e.getMessage());
+        } catch (IOException e) {
+//            e.printStackTrace();
+            JLogEx.w(e.getMessage());
+        }finally {
+            if(null != reader){
+                try {
+                    reader.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        return text.toString();
     }
 }

@@ -7,6 +7,7 @@ import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 
 import com.houxj.generaltools.utils.JLogEx;
+import com.houxj.generaltools.utils.JPinYinUtils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -128,10 +129,12 @@ public class JRunTimePermissions {
         return hasPermission(context, new String[]{permission});
     }
     public static boolean hasPermission(Context context, String[] permissions){
-        List<String> list = Arrays.asList(permissions);
-        List<String> denied = JPermissionsUtils.findDeniedPermissions(context,list);
-        if(null != denied && denied.size() <=0){
-            return true;
+        if(checkPermissionsInManifest(context, permissions)) {//先判断有定义在文件中
+            List<String> list = Arrays.asList(permissions);
+            List<String> denied = JPermissionsUtils.findDeniedPermissions(context, list);
+            if (null != denied && denied.size() <= 0) {
+                return true;
+            }
         }
         return false;
     }
@@ -139,5 +142,13 @@ public class JRunTimePermissions {
     //TODO 进入系统权限设置界面
     public static void goSystemPermissionSetting(Context context){
         JPermissionsSystemSetting.settingPermission(context);
+    }
+
+    //TODO 检查权限是否在 AndroidManifest.xml 中定义
+    public static boolean checkPermissionsInManifest(Context context, String[] permission){
+        boolean bRet = false;
+        List<String> manifest = JPermissionsUtils.getAppDangerPermissions(context);
+        bRet = manifest.containsAll(Arrays.asList(permission));
+        return bRet;
     }
 }

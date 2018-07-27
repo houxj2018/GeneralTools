@@ -1,31 +1,56 @@
 package com.houxj.generaltools.debug;
 
+import android.Manifest;
+import android.annotation.SuppressLint;
+import android.annotation.TargetApi;
+import android.app.ActivityManager;
+import android.content.Context;
 import android.database.Cursor;
+import android.graphics.Rect;
 import android.net.Uri;
-import android.os.Environment;
-import android.provider.BaseColumns;
-import android.provider.MediaStore;
-import android.support.v4.content.FileProvider;
-import android.support.v7.app.AppCompatActivity;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
+import android.provider.MediaStore;
+import android.support.annotation.Nullable;
+import android.support.annotation.RequiresApi;
+import android.support.v7.app.AppCompatActivity;
+import android.telephony.CellInfo;
+import android.telephony.NeighboringCellInfo;
+import android.telephony.TelephonyManager;
 import android.text.method.ScrollingMovementMethod;
+import android.util.DisplayMetrics;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.houxj.generaltools.R;
 import com.houxj.generaltools.permit.IPermissionCallBack;
 import com.houxj.generaltools.permit.JRunTimePermissions;
-import com.houxj.generaltools.utils.JFileUtils;
-import com.houxj.generaltools.utils.JPinYinUtils;
+import com.houxj.generaltools.tools.JAudioPlayer;
+import com.houxj.generaltools.tools.JAudioRecorder;
+import com.houxj.generaltools.tools.JTimer;
+import com.houxj.generaltools.utils.JDisplayUtils;
+import com.houxj.generaltools.utils.JNetworkUtils;
 import com.houxj.generaltools.utils.JAppCache;
+import com.houxj.generaltools.utils.JDateTimeUtils;
+import com.houxj.generaltools.utils.JFileUtils;
 import com.houxj.generaltools.utils.JImageLoader;
 import com.houxj.generaltools.utils.JLogEx;
 import com.houxj.generaltools.utils.JMd5Tools;
+import com.houxj.generaltools.utils.JPhoneUtils;
+import com.houxj.generaltools.utils.JPinYinUtils;
 import com.houxj.generaltools.utils.JSharedP;
-import com.houxj.generaltools.utils.JDateTimeUtils;
+import com.houxj.generaltools.utils.JSoftKeyboardUtils;
+import com.houxj.generaltools.utils.JStringUtils;
+import com.houxj.generaltools.utils.JThirdAppUtils;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -38,6 +63,7 @@ public class MainActivity extends AppCompatActivity implements IPermissionCallBa
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         JLogEx.setDebugEnable(true);
+        JLogEx.setDepth(1);
         JImageLoader.initLoader(this);
         setContentView(R.layout.activity_main);
         JRunTimePermissions.with(this)
@@ -62,6 +88,12 @@ public class MainActivity extends AppCompatActivity implements IPermissionCallBa
         if(offset>(mtvInfo.getHeight()-mtvInfo.getLineHeight()-20)){
             mtvInfo.scrollTo(0,offset-mtvInfo.getHeight()+mtvInfo.getLineHeight()+20);
         }
+    }
+
+    @Override
+    protected void onPostCreate(@Nullable Bundle savedInstanceState) {
+        super.onPostCreate(savedInstanceState);
+//        JSoftKeyboardUtils.showSoftKeyboardDelayed(findViewById(R.id.edit_input),200);
     }
 
     public void onClick(View view){
@@ -92,7 +124,225 @@ public class MainActivity extends AppCompatActivity implements IPermissionCallBa
         }else if(R.id.but_file == id){
             listSystemUri();
             testFileUtils();
+        }else if(R.id.but_string == id){
+            testStringUtils();
+        }else if(R.id.but_network == id){
+            testNetwork();
+        }else if(R.id.but_phone == id){
+            testPhoneInfo();
+        }else if(R.id.but_rebootapp == id){
+            testrebootApp();
+        }else if(R.id.but_checkapp == id){
+            checkExtApp();
+        }else if(R.id.but_softkeyb == id){
+            testSoftKeyboard();
+        }else if(R.id.but_play == id){
+            testpaly();
+        }else if(R.id.but_stop == id){
+            teststop();
+        }else if(R.id.but_start_record == id){
+            testRecord();
+        }else if(R.id.but_stop_record == id){
+            testStopRecord();
         }
+    }
+
+    JAudioRecorder mRecord = null;
+    private void testRecord(){
+        mRecord = JAudioRecorder.newInstance(this)
+//                .setMaxDuration(10)
+                .startAsync();
+        String[] myper = {Manifest.permission.WRITE_EXTERNAL_STORAGE,
+        Manifest.permission.RECORD_AUDIO};
+        updateTextInfo("Permission " + JRunTimePermissions
+                .checkPermissionsInManifest(this, myper));
+    }
+
+    private void testStopRecord(){
+        if(null != mRecord){
+            mRecord.stop();
+        }
+    }
+
+    private void teststop(){
+        if(null != mAudioPlayer){
+            mAudioPlayer.stop();
+        }
+    }
+
+    JAudioPlayer mAudioPlayer;
+
+    private void testpaly(){
+        String file_path = Environment.getExternalStorageDirectory().getAbsolutePath();
+        //大壮-我们不一样.mp3
+        file_path += File.separator + Environment.DIRECTORY_MUSIC + File.separator + "费玉清-夏之旅.wav";
+        mAudioPlayer = JAudioPlayer.newInstance()
+                .setSource(file_path)
+                .setListener(new JAudioPlayer.IAudioListener() {
+                    @Override
+                    public void onPosition(int position) {
+                        JLogEx.d("postion %d", position);
+                    }
+
+                    @Override
+                    public void onComplete() {
+                        JLogEx.d();
+                    }
+
+                    @Override
+                    public void onError() {
+                        JLogEx.d();
+                    }
+                })
+                .play();
+    }
+
+    @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR1)
+    private void testSoftKeyboard(){
+        updateTextInfo("键盘状态：" + JSoftKeyboardUtils.checkSoftKeyboardState(this));
+        updateTextInfo("Srceen = " + JDisplayUtils.getScreenSize(this));
+        updateTextInfo("Win = " + JDisplayUtils.getWindowsSize(this));
+        updateTextInfo("导航栏高度 ： " + JDisplayUtils.getNaviBarHeight(this));
+
+
+        int screenHeight = getWindow().getDecorView().getHeight();
+        updateTextInfo("screenHeight=" + screenHeight);
+        //获取View可见区域的bottom
+        Rect rect = new Rect();
+        getWindow().getDecorView().getWindowVisibleDisplayFrame(rect);
+        updateTextInfo("rect=" + rect);
+        updateTextInfo("aaaa=" + (screenHeight - rect.bottom));
+
+        DisplayMetrics metrics = new DisplayMetrics();
+        //这个方法获取可能不是真实屏幕的高度
+        getWindowManager().getDefaultDisplay().getMetrics(metrics);
+        int usableHeight = metrics.heightPixels;
+        updateTextInfo("usableHeight=" + usableHeight);
+        //获取当前屏幕的真实高度
+        getWindowManager().getDefaultDisplay().getRealMetrics(metrics);
+        int realHeight = metrics.heightPixels;
+        updateTextInfo("realHeight=" + realHeight);
+
+        updateTextInfo("xxxxx=" + (realHeight - usableHeight));
+
+        if(JSoftKeyboardUtils.checkSoftKeyboardState(this)){
+            JSoftKeyboardUtils.hideSoftKeyboard(this);
+        }else{
+            JSoftKeyboardUtils.showSoftKeyboard(this);
+        }
+    }
+
+    private void checkExtApp(){
+        updateTextInfo("微信：" + JThirdAppUtils.isWeixinAvilible(this));
+        updateTextInfo("QQ：" + JThirdAppUtils.isQQClientAvailable(this));
+        updateTextInfo("QQ：" + JThirdAppUtils.bootThirdApp(this,"com.qiloo.smartcard"));
+    }
+
+    private void testrebootApp(){
+        Toast.makeText(this,"Please Waiting ReBoot...",Toast.LENGTH_LONG).show();
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    Thread.sleep(500);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                JThirdAppUtils.rebootAppSelf(getApplicationContext(), MainActivity.class);
+            }
+        }).start();
+    }
+
+    @SuppressLint({"MissingPermission", "HardwareIds"})
+    private void testPhoneInfo(){
+        updateTextInfo(Build.BOARD);
+        updateTextInfo(Build.MANUFACTURER);
+        updateTextInfo(Build.SERIAL);
+        updateTextInfo(JPhoneUtils.getModel());
+        updateTextInfo(JPhoneUtils.getSdkVersion() +"");
+        updateTextInfo(JPhoneUtils.getAndroidVersion());
+
+        updateTextInfo(Build.PRODUCT);
+        updateTextInfo(Build.DEVICE);
+        updateTextInfo(Build.FINGERPRINT);
+        updateTextInfo(JFileUtils.loadFileAsString("/sys/class/net/wlan0/address"));
+        updateTextInfo(JPhoneUtils.getWifiMac(getApplicationContext()));
+        updateTextInfo(JPhoneUtils.getPhoneNumber(this));
+        updateTextInfo(JPhoneUtils.getIMEI(this));
+
+        TelephonyManager tm = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
+        if(null != tm) {
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.JELLY_BEAN_MR1) {
+                List<CellInfo> lstcell = tm.getAllCellInfo();
+                if(null != lstcell){
+                    for (CellInfo info:lstcell){
+                        updateTextInfo(info.toString());
+                    }
+                }
+            } else {
+                List<NeighboringCellInfo> lstcell = tm.getNeighboringCellInfo();
+                JLogEx.d(lstcell);
+                if(null != lstcell){
+                    for (NeighboringCellInfo info:lstcell){
+                        updateTextInfo(info.toString());
+                    }
+                }
+            }
+
+            updateTextInfo("国际长途区号:" + tm.getNetworkCountryIso());
+            updateTextInfo("MCC+MNC:" + tm.getNetworkOperator());
+            updateTextInfo("注册的用户名字:" + tm.getNetworkOperatorName());
+            updateTextInfo("网络制式类型:" + tm.getPhoneType());
+            updateTextInfo("SIM卡的国家码:" + tm.getSimCountryIso());
+            updateTextInfo("SIM卡提供的移动国家码和移动网络码:" + tm.getSimOperator());
+            updateTextInfo("服务商名称:" + tm.getSimOperatorName());
+            updateTextInfo("SIM卡的序列号:" + tm.getSimSerialNumber());
+            updateTextInfo("国际移动用户识别码:" + tm.getSubscriberId());
+            updateTextInfo("MCC:" + JPhoneUtils.getMcc(this));
+            updateTextInfo("MNC:" + JPhoneUtils.getMnc(this));
+
+        }
+
+        updateTextInfo("分辨率:" + JDisplayUtils.getScreenSize(this));
+        updateTextInfo("密度:" + JDisplayUtils.getScreenDensity(this));
+        updateTextInfo("密度DPI:" + JDisplayUtils.getScreenDensityDpi(this));
+        updateTextInfo("导航栏:" + JDisplayUtils.getNaviBarHeight(this));
+
+        updateTextInfo("可用内存 = " + JPhoneUtils.getAvailMemSize(this)+
+                " "+ JFileUtils.fomatFileSize(JPhoneUtils.getAvailMemSize(this)));
+        updateTextInfo("总内存 = " + JPhoneUtils.getTotalMemSize(this) +
+                " "+ JFileUtils.fomatFileSize(JPhoneUtils.getTotalMemSize(this)));
+        updateTextInfo("可用空间=" + JPhoneUtils.getAvailExternalSize() +
+                " "+ JFileUtils.fomatFileSize(JPhoneUtils.getAvailExternalSize()));
+        updateTextInfo("总空间=" + JPhoneUtils.getTotalExternalSize() +
+                " "+ JFileUtils.fomatFileSize(JPhoneUtils.getTotalExternalSize()));
+
+    }
+
+    private void testNetwork(){
+        updateTextInfo("Net Type = " + JNetworkUtils.getNetworkType(this));
+        updateTextInfo("M Type = " + JNetworkUtils.getMobileType(this));
+        updateTextInfo(JPhoneUtils.getWifiIP());
+    }
+
+    private void testStringUtils(){
+        String temp = "中国";
+        try {
+            String xx = new String(temp.getBytes(),"gbk");
+            updateTextInfo("A=" + temp.getBytes().length + " B=" + xx.getBytes().length);
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
+        String mytemp = "ABC!@#$!Z124.,?/'\\;[]";
+
+        updateTextInfo(String.format("%d-%d", mytemp.length(), JStringUtils.getMemoryLength(mytemp)));
+
+        int val = JStringUtils.str2Int("dad120.002vsd").intValue();
+        updateTextInfo(val +"");
+
+        updateTextInfo(JStringUtils.extractNumber("fds120451.01fsd"));
+        updateTextInfo(JStringUtils.extractNumber("欢迎使用电话18612510245"));
+
     }
 
     private void listSystemUri(){
@@ -174,6 +424,8 @@ public class MainActivity extends AppCompatActivity implements IPermissionCallBa
         updateTextInfo(JLogEx.objString(mingdan.toArray()));
         JPinYinUtils.sortByFirstPinYin(mingdan);
         updateTextInfo(JLogEx.objString(mingdan.toArray()));
+
+
     }
 
     private void testDate(){
@@ -291,16 +543,17 @@ public class MainActivity extends AppCompatActivity implements IPermissionCallBa
         updateTextInfo(Environment.getDataDirectory().getAbsolutePath());
         updateTextInfo(Environment.getExternalStorageDirectory().getAbsolutePath());
 
-        updateTextInfo(JFileUtils.getTempPath(this));
+        updateTextInfo(JFileUtils.getCachePath(this));
     }
 
     //获取缓存大小
     private void getCacheSize(){
-        updateTextInfo(JAppCache.fomatFileSize(JAppCache.getAppCacheSize(this)));
+        updateTextInfo(JFileUtils.fomatFileSize(JAppCache.getAppCacheSize(this)));
     }
 
     @Override
     public void onResult(int result) {
         JLogEx.d("%d", result);
     }
+
 }
