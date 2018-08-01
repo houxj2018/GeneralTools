@@ -144,6 +144,15 @@ public class MainActivity extends AppCompatActivity implements IPermissionCallBa
             testRecord();
         }else if(R.id.but_stop_record == id){
             testStopRecord();
+        }else if(R.id.but_all_app == id){
+            getAllApp();
+        }
+    }
+
+    private void getAllApp(){
+        List<JThirdAppUtils.MyAppInfo> list = JThirdAppUtils.getAvilibleApplication(this);
+        for (JThirdAppUtils.MyAppInfo info:list){
+            updateTextInfo(info.getAppLable() + " " + info.getAppPackage());
         }
     }
 
